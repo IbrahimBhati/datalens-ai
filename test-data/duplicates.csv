@@ -1,0 +1,9 @@
+user_id,full_name,email,role,created_at
+3001,Sarah Connor,sarah.c@resistance.org,ADMIN,2022-01-01
+3002,John Connor,john.c@resistance.org,USER,2022-02-15
+3001,Sarah Connor,sarah.c@resistance.org,ADMIN,2022-01-01
+3003,Kyle Reese,kyle.r@resistance.org,USER,2022-03-20
+3002,John Connor Alternate,j.connor@defense.gov,USER,2022-04-10
+3004,Miles Dyson,miles.dyson@cyberdyne.com,ENGINEER,2022-05-12
+3001,Sarah Connor,sarah.c@resistance.org,ADMIN,2022-01-01
+3005,Marcus Wright,marcus.w@salvation.org,SCOUT,2022-06-18

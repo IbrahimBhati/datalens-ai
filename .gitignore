@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+.yarn/
+
+# Python / Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+backend/.venv/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Next.js & Build Outputs
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Environment Variables & Secrets (CRITICAL: NEVER COMMIT)
+.env
+.env*.local
+.env.development
+.env.production
+backend/.env
+backend/.env*.local
+frontend/.env
+frontend/.env*.local
+!.env.example
+!**/.env.example
+
+
+# Temporary Uploads & Datasets
+uploads/
+backend/uploads/
+*.tmp
+*.log
+scratch/
+
+# IDE & OS
+.DS_Store
+*.pem
+.idea/
+.vscode/
+Thumbs.db

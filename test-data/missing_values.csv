@@ -1,0 +1,11 @@
+record_id,employee_name,department,emergency_contact,middle_name,salary,hire_date,notes
+4001,Arthur Dent,Engineering,,Philip,85000,2021-04-01,
+4002,Ford Prefect,,Arthur Dent,,92000,2021-05-15,
+4003,Trillian Astra,Science,,,,2021-06-20,
+4004,Zaphod Beeblebrox,Executive,,,,2021-07-01,
+4005,Marvin Android,Operations,,,45000,,
+4006,Slartibartfast,Engineering,,,,2021-09-12,
+4007,,Support,,,,2021-10-05,
+4008,Tricia McMillan,Science,,,,2021-11-20,
+4009,Eddie Computer,IT,,Mainframe,120000,2021-12-01,
+4010,Deep Thought,Research,,,,2022-01-10,
