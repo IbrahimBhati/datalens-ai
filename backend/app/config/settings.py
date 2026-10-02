@@ -21,14 +21,18 @@ ALLOWED_EXTENSIONS: set[str] = {".csv", ".json"}
 # ---------------------------------------------------------------------------
 CORS_ORIGINS: list[str] = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000,https://datalens-ai-ibrahim.netlify.app,https://frontend-nu-hazel-44.vercel.app",
+    ).split(",")
     if origin.strip()
 ]
-# Allows Vercel preview URLs (https://*-username.vercel.app) without needing to configure every branch
+# Allows Vercel and Netlify preview and production URLs (*.vercel.app, *.netlify.app)
 CORS_ORIGIN_REGEX: str | None = os.getenv(
     "CORS_ORIGIN_REGEX",
-    r"^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https:\/\/.*\.vercel\.app$",
+    r"^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https:\/\/.*\.vercel\.app$|^https:\/\/.*\.netlify\.app$",
 )
+
 
 # ---------------------------------------------------------------------------
 # Storage
