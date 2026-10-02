@@ -198,13 +198,13 @@ def validate_content_integrity(contents: bytes, fmt: str) -> None:
     Verify basic structural integrity of the file content without full analysis.
     """
     if fmt == "json":
-        # Check if valid JSON or JSON Lines
+        # Check if valid JSON or JSON Lines (supporting UTF-8 with or without BOM)
         try:
-            json.loads(contents.decode("utf-8"))
+            json.loads(contents.decode("utf-8-sig"))
         except (ValueError, UnicodeDecodeError):
             # Check JSON Lines
             try:
-                lines = contents.decode("utf-8").strip().splitlines()
+                lines = contents.decode("utf-8-sig").strip().splitlines()
                 if not lines:
                     raise ValueError("Empty lines")
                 for line in lines[:10]:  # check first few lines
@@ -214,6 +214,7 @@ def validate_content_integrity(contents: bytes, fmt: str) -> None:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid JSON format. File could not be parsed as JSON or JSON Lines.",
                 )
+
     elif fmt == "csv":
         try:
             # Must be decodable text

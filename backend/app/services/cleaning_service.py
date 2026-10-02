@@ -57,11 +57,16 @@ def clean_dataset(dataset_id: str) -> CleanDatasetResponse:
     # -------------------------------------------------------------
     # 1. REMOVE EXACT DUPLICATE ROWS
     # -------------------------------------------------------------
-    duplicate_mask = df.duplicated(keep="first")
-    num_duplicates = int(duplicate_mask.sum())
+    try:
+        duplicate_mask = df.duplicated(keep="first")
+        num_duplicates = int(duplicate_mask.sum())
+    except TypeError:
+        duplicate_mask = df.astype(str).duplicated(keep="first")
+        num_duplicates = int(duplicate_mask.sum())
 
     if num_duplicates > 0:
         df = df[~duplicate_mask].reset_index(drop=True)
+
         transformations.append(
             TransformationRecord(
                 type="remove_duplicates",

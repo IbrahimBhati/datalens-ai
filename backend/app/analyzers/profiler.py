@@ -63,23 +63,104 @@ def locate_dataset_file(dataset_id: str) -> Tuple[Path, str]:
     )
 
 
+import json
+
+
+def load_json_to_dataframe(file_path: Path) -> pd.DataFrame:
+    """
+    Universally parse a JSON file into a pandas DataFrame:
+    1. Read with utf-8-sig (handles standard UTF-8 and Windows/Notepad BOM).
+    2. Handle list of dicts (with json_normalize).
+    3. Handle wrapped objects (e.g. {"data": [...]}, {"items": [...]}, {"results": [...]}, etc.).
+    4. Handle dict-of-records (orient='index').
+    5. Handle dict-of-lists (columnar).
+    6. Handle single object (single row).
+    7. Fallback to JSON Lines (NDJSON).
+    """
+    with open(file_path, "r", encoding="utf-8-sig") as f:
+        raw_text = f.read().strip()
+
+    if not raw_text:
+        return pd.DataFrame()
+
+    try:
+        data = json.loads(raw_text)
+    except Exception:
+        # Fallback to JSON Lines (NDJSON)
+        lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+        records = []
+        for line in lines:
+            try:
+                records.append(json.loads(line))
+            except Exception:
+                pass
+        if records:
+            return pd.json_normalize(records)
+        raise ValueError("Could not parse file as valid JSON or JSON Lines format.")
+
+    if isinstance(data, list):
+        if not data:
+            return pd.DataFrame()
+        if isinstance(data[0], dict):
+            return pd.json_normalize(data)
+        return pd.DataFrame({"value": data})
+
+    elif isinstance(data, dict):
+        # Look for standard data collection wrapper keys
+        for key in ["data", "items", "records", "results", "rows", "dataset", "features", "payload"]:
+            if (
+                key in data
+                and isinstance(data[key], list)
+                and len(data[key]) > 0
+                and isinstance(data[key][0], dict)
+            ):
+                return pd.json_normalize(data[key])
+
+        # Dict of records: {"r1": {"a": 1}, "r2": {"a": 2}}
+        if data and all(isinstance(v, dict) for v in data.values()):
+            return pd.DataFrame.from_dict(data, orient="index")
+
+        # Column-oriented dict: {"col1": [1, 2], "col2": [3, 4]}
+        if data and all(isinstance(v, list) for v in data.values()):
+            try:
+                return pd.DataFrame(data)
+            except Exception:
+                pass
+
+        # Single record object: {"id": 1, "name": "..."}
+        return pd.DataFrame([data])
+
+    return pd.DataFrame()
+
+
 def load_dataset_readonly(file_path: Path, fmt: str) -> pd.DataFrame:
     """
     Load a dataset strictly in read-only mode without mutating the source file.
+    Supports CSV and universal JSON formats. Sanitizes nested dicts/lists to JSON strings
+    so duplicate detection, grouping, and unique indexing operate without unhashable errors.
     """
     try:
         if fmt == "csv":
             df = pd.read_csv(file_path, low_memory=False)
         elif fmt == "json":
-            try:
-                df = pd.read_json(file_path, lines=False)
-            except Exception:
-                df = pd.read_json(file_path, lines=True)
+            df = load_json_to_dataframe(file_path)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Unsupported format '{fmt}'.",
             )
+
+        # Sanitize unhashable types (dict, list) in object columns
+        for col in df.columns:
+            if df[col].dtype == object or str(df[col].dtype) == "object":
+                has_nested = df[col].apply(lambda x: isinstance(x, (dict, list))).any()
+                if has_nested:
+                    df[col] = df[col].apply(
+                        lambda x: json.dumps(x, ensure_ascii=False, sort_keys=True)
+                        if isinstance(x, (dict, list))
+                        else x
+                    )
+
         return df
     except HTTPException:
         raise
@@ -88,6 +169,7 @@ def load_dataset_readonly(file_path: Path, fmt: str) -> pd.DataFrame:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Failed to read dataset file for profiling: {str(e)}",
         )
+
 
 
 def profile_dataset(dataset_id: str) -> DatasetProfileResponse:

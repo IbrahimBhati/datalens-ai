@@ -55,6 +55,9 @@ async def _read_with_size_check(file: UploadFile) -> bytes:
     return contents
 
 
+from app.analyzers.profiler import load_json_to_dataframe
+
+
 def _parse_and_validate_content(file_path: Path, ext: str) -> dict:
     """
     Try to parse the file to confirm it's valid CSV/JSON.
@@ -63,9 +66,12 @@ def _parse_and_validate_content(file_path: Path, ext: str) -> dict:
     try:
         if ext == ".csv":
             df = pd.read_csv(file_path, nrows=5)
+            # Count lines minus header for CSVs without loading everything into memory
+            with open(file_path, encoding="utf-8", errors="replace") as f_in:
+                row_count = sum(1 for _ in f_in) - 1
         elif ext == ".json":
-            df = pd.read_json(file_path, lines=False)
-            # If that fails, try JSON Lines format
+            df = load_json_to_dataframe(file_path)
+            row_count = len(df)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -73,21 +79,6 @@ def _parse_and_validate_content(file_path: Path, ext: str) -> dict:
             )
     except HTTPException:
         raise
-    except ValueError:
-        # For JSON, try JSON Lines format
-        if ext == ".json":
-            try:
-                df = pd.read_json(file_path, lines=True)
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Could not parse the JSON file. Ensure it is valid JSON or JSON Lines format.",
-                )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Could not parse the CSV file. Ensure it is valid CSV format.",
-            )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -106,20 +97,13 @@ def _parse_and_validate_content(file_path: Path, ext: str) -> dict:
             detail="The uploaded file contains no columns.",
         )
 
-    # Read full row count separately (cheap for CSV, already loaded for JSON)
-    if ext == ".csv":
-        # Count lines minus header for CSVs without loading everything into memory
-        with open(file_path, encoding="utf-8", errors="replace") as f_in:
-            row_count = sum(1 for _ in f_in) - 1
-    else:
-        row_count = len(pd.read_json(file_path, lines=False if ext == ".json" else True))
-
     return {
-        "columns": list(df.columns),
+        "columns": [str(c) for c in df.columns],
         "column_count": len(df.columns),
         "row_count": max(row_count, 0),
         "preview_rows": df.head(5).to_dict(orient="records"),
     }
+
 
 
 @router.post("")

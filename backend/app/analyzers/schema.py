@@ -122,8 +122,9 @@ def infer_column_type(series: pd.Series, date_stats: DateStats) -> str:
         return "numeric"
 
     # 4. Categorical vs Text
-    unique_count = len(non_null.unique())
+    unique_count = int(non_null.nunique(dropna=True))
     total_count = len(non_null)
+
 
     if total_count > 0:
         # If low cardinality (20 or fewer unique values, or <= 5% unique for larger sets)

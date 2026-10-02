@@ -50,9 +50,15 @@ def detect_duplicates(df: pd.DataFrame) -> List[QualityIssue]:
         return issues
 
     # 1. Exact full-row duplicates
-    exact_mask = df.duplicated(keep=False)
-    exact_count = int(df.duplicated(keep="first").sum())
+    try:
+        exact_mask = df.duplicated(keep=False)
+        exact_count = int(df.duplicated(keep="first").sum())
+    except TypeError:
+        safe_df = df.astype(str)
+        exact_mask = safe_df.duplicated(keep=False)
+        exact_count = int(safe_df.duplicated(keep="first").sum())
     exact_affected = int(exact_mask.sum())
+
 
     if exact_count > 0:
         pct = round((exact_affected / total_rows) * 100, 2)
